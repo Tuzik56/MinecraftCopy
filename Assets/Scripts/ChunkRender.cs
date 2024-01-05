@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
+[RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
 public class ChunkRender : MonoBehaviour
 {
-    [SerializeField] Material material;
+    public const int chunkWidth = 16;
+    public const int chunkHeight = 128;
 
-    private const int chunkWidth = 10;
-    private const int chunkHeight = 10;
-
-    private int[,,] blocks = new int[chunkWidth, chunkHeight, chunkWidth];
+    public ChunkData chunkData;
+    public GameWorld parentWorld;
 
     private List<Vector3> verticies = new List<Vector3>();
     private List<int> triangles = new List<int>();
@@ -19,9 +18,6 @@ public class ChunkRender : MonoBehaviour
     void Start()
     {
         Mesh chunkMesh = new Mesh();
-
-        blocks[0, 0, 0] = 1;
-        blocks[0, 0, 1] = 1;
 
         for (int y = 0; y < chunkHeight; y++)
         {
@@ -37,11 +33,13 @@ public class ChunkRender : MonoBehaviour
         chunkMesh.vertices = verticies.ToArray();
         chunkMesh.triangles = triangles.ToArray();
 
+        chunkMesh.Optimize();
+
         chunkMesh.RecalculateNormals();
         chunkMesh.RecalculateBounds();
 
         GetComponent<MeshFilter>().mesh = chunkMesh;
-        GetComponent<MeshRenderer>().sharedMaterial = material;
+        GetComponent<MeshCollider>().sharedMesh = chunkMesh;
     }
 
     private void GenerateBlock(int x, int y, int z)
@@ -56,27 +54,49 @@ public class ChunkRender : MonoBehaviour
         if (GetBlockAtPosition(blockPosition + Vector3Int.back) == 0) GenerateBackSide(blockPosition);
         if (GetBlockAtPosition(blockPosition + Vector3Int.up) == 0) GenerateTopSide(blockPosition);
         if (GetBlockAtPosition(blockPosition + Vector3Int.down) == 0) GenerateBottomSide(blockPosition);
-
-        //GenerateRightSide(blockPosition);
-        //GenerateLeftSide(blockPosition);
-        //GenerateFrontSide(blockPosition);
-        //GenerateBackSide(blockPosition);
-        //GenerateTopSide(blockPosition);
-        //GenerateBottomSide(blockPosition);
     }
 
-    private int GetBlockAtPosition(Vector3Int blockPosition)
+    private BlockType GetBlockAtPosition(Vector3Int blockPosition)
     {
         if (blockPosition.x >= 0 && blockPosition.x < chunkWidth &&
             blockPosition.y >= 0 && blockPosition.y < chunkHeight &&
             blockPosition.z >= 0 && blockPosition.z < chunkWidth)
         {
-            return blocks[blockPosition.x, blockPosition.y, blockPosition.z];
+            return chunkData.blocks[blockPosition.x, blockPosition.y, blockPosition.z];
         }
         else
         {
-            return 0;
+            if (blockPosition.y < 0 || blockPosition.y > chunkHeight) return BlockType.Air;
+
+            Vector2Int adjacentChunkPosition = chunkData.chunkPosition;
+
+            if (blockPosition.x < 0)
+            {
+                adjacentChunkPosition.x--;
+                blockPosition.x += chunkWidth;
+            }
+            else if (blockPosition.x >= chunkWidth)
+            {
+                adjacentChunkPosition.x++;
+                blockPosition.x -= chunkWidth;
+            }
+            else if (blockPosition.z < 0)
+            {
+                adjacentChunkPosition.y--;
+                blockPosition.z += chunkWidth;
+            }
+            else if (blockPosition.z >= chunkWidth)
+            {
+                adjacentChunkPosition.y++;
+                blockPosition.z -= chunkWidth;
+            }
+
+            if (parentWorld.chunkDatas.TryGetValue(adjacentChunkPosition, out ChunkData adjacentChunk))
+            {
+                return adjacentChunk.blocks[blockPosition.x, blockPosition.y, blockPosition.z];
+            }
         }
+        return BlockType.Air;
     }
 
     private void GenerateRightSide(Vector3Int blockPosition)
