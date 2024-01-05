@@ -10,7 +10,7 @@ public static class TerrainGenerator
         {
             for (int z = 0;  z < ChunkRender.chunkWidth; z++)
             {
-                float height = Mathf.PerlinNoise((x + xOffset) * .2f, (z + zOffset) * .2f) * 5 + 10 * 3;
+                float height = Mathf.PerlinNoise((x/2f + xOffset) * .2f, (z/2f + zOffset) * .2f) * 10 + 10 * 3;
 
                 for (int y = 0; y < height; y++)
                 {

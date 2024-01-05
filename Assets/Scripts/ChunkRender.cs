@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,12 +13,24 @@ public class ChunkRender : MonoBehaviour
     public ChunkData chunkData;
     public GameWorld parentWorld;
 
+    private Mesh chunkMesh;
+
     private List<Vector3> verticies = new List<Vector3>();
     private List<int> triangles = new List<int>();
 
     void Start()
     {
-        Mesh chunkMesh = new Mesh();
+        chunkMesh = new Mesh();
+
+        RegenerateMesh();
+
+        GetComponent<MeshFilter>().mesh = chunkMesh;
+    }
+
+    private void RegenerateMesh()
+    {
+        verticies.Clear();
+        triangles.Clear();
 
         for (int y = 0; y < chunkHeight; y++)
         {
@@ -30,6 +43,7 @@ public class ChunkRender : MonoBehaviour
             }
         }
 
+        chunkMesh.triangles = Array.Empty<int>();
         chunkMesh.vertices = verticies.ToArray();
         chunkMesh.triangles = triangles.ToArray();
 
@@ -38,8 +52,19 @@ public class ChunkRender : MonoBehaviour
         chunkMesh.RecalculateNormals();
         chunkMesh.RecalculateBounds();
 
-        GetComponent<MeshFilter>().mesh = chunkMesh;
         GetComponent<MeshCollider>().sharedMesh = chunkMesh;
+    }
+
+    public void SpawnBlock(Vector3Int blockPosition)
+    {
+        chunkData.blocks[blockPosition.x, blockPosition.y, blockPosition.z] = BlockType.Grass;
+        RegenerateMesh();
+    }
+
+    public void DestroyBlock(Vector3Int blockPosition)
+    {
+        chunkData.blocks[blockPosition.x, blockPosition.y, blockPosition.z] = BlockType.Air;
+        RegenerateMesh();
     }
 
     private void GenerateBlock(int x, int y, int z)
