@@ -16,6 +16,7 @@ public class ChunkRender : MonoBehaviour
     private Mesh chunkMesh;
 
     private List<Vector3> verticies = new List<Vector3>();
+    private List<Vector2> uvs = new List<Vector2>();
     private List<int> triangles = new List<int>();
 
     void Start()
@@ -30,6 +31,7 @@ public class ChunkRender : MonoBehaviour
     private void RegenerateMesh()
     {
         verticies.Clear();
+        uvs.Clear();
         triangles.Clear();
 
         for (int y = 0; y < chunkHeight; y++)
@@ -45,6 +47,7 @@ public class ChunkRender : MonoBehaviour
 
         chunkMesh.triangles = Array.Empty<int>();
         chunkMesh.vertices = verticies.ToArray();
+        chunkMesh.uv = uvs.ToArray();
         chunkMesh.triangles = triangles.ToArray();
 
         chunkMesh.Optimize();
@@ -186,6 +189,11 @@ public class ChunkRender : MonoBehaviour
 
     private void AddLastVerciciesSquare()
     {
+        uvs.Add(new Vector2(64f/256, 240f/256));
+        uvs.Add(new Vector2(64f/256, 1));
+        uvs.Add(new Vector2(80f/256, 240f / 256));
+        uvs.Add(new Vector2(80f/256, 1));
+
         triangles.Add(verticies.Count - 4);
         triangles.Add(verticies.Count - 3);
         triangles.Add(verticies.Count - 2);
